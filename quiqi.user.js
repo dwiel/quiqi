@@ -43,13 +43,9 @@ GM_xmlhttpRequest({
 	},
 	onload: function(responseDetails) {
 		response = responseDetails.responseText;
-//  		if(response.substring(0,1) == '{') {
-//  			fullresponse = eval('('+response+')');
-//  			response = fullresponse['answer'];
-// 			response += ' <a href="'+fullresponse['source']+'">source</a>';
-//  		}
-    response = response.replace('<','&#60;');
-    response = response.replace('>','&#62;');
+		response = response.replace(/</g,'&#60;');
+		response = response.replace(/>/g,'&#62;');
+		response = response.replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/%2B/g, '\+').replace(/%2C/g, '\,');
 		answer = response.replace(/\n/g,'<br>');
 		answer_html = '<div id="answer" style="margin-left:1em;">'+answer+'</div>';
 		$('#ssb').after(answer_html);
@@ -76,8 +72,9 @@ function submit_answer() {
         fromsave = true;
         $('#login').slideDown();
       } else {
-        response = response.replace('<','&nblt;');
-        response = response.replace('>','&nbgt;');
+        response = response.replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/%2B/g, '\+').replace(/%2C/g, '\,');
+        response = response.replace(/</g,'&lt;');
+        response = response.replace(/>/g,'&gt;');
         response = response.replace(/\n/g,'<br>');
         $('#answer').html(answer.replace(/\n/g, '<br>'));
         $('#answer').show();
@@ -89,7 +86,12 @@ function submit_answer() {
 toggle_add_answer = function() {
   $('#google_answers_form').toggle();
   $('#answer').toggle();
-  $('#answer_content').val($('#answer').html().replace(/<br>/g, '\n'));
+  $('#answer_content').val(
+    $('#answer').html()
+                .replace(/<br>/g, '\n')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+   );
 }
 
 function login() {
@@ -129,6 +131,7 @@ function cancel_login() {
   fromsave = false;
 }
 
+function nop() {}
 
 $(document).ready( function() {
 	// your jquery code here
