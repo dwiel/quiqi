@@ -18,6 +18,7 @@ if(end == -1) {
 } else {
 	query = url.substring(begin+2, end);
 }
+query = query.replace(/%22/g, "%5C%22").replace(/%27/g, "%5C%27");
 
 $.post = function(url, options, fn) {
   GM_xmlhttpRequest({
@@ -33,8 +34,13 @@ $.post = function(url, options, fn) {
     }
   });
 }
+function safe(s) {
+  return s.replace(/</g,'&#60;').replace(/>/g,'&#62;').replace(/\n/g,'<br>');
+}
+function unsafe(s) {
+    return s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/<br>/g, '\n');
+}
 
-query = query.replace(/%22/g, "%5C%22").replace(/%27/g, "%5C%27");
 GM_xmlhttpRequest({
 	method: 'GET',
   url: 'http://quiqi.org/q/'+query,
@@ -42,56 +48,37 @@ GM_xmlhttpRequest({
 		'User-agent': 'Mozilla/4.0 (compatible) Greasemonkey',
 	},
 	onload: function(responseDetails) {
-		response = responseDetails.responseText;
-		response = response.replace(/</g,'&#60;');
-		response = response.replace(/>/g,'&#62;');
-		response = response.replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/%2B/g, '\+').replace(/%2C/g, '\,');
-		answer = response.replace(/\n/g,'<br>');
+		answer = safe(responseDetails.responseText);
 		answer_html = '<div id="answer" style="margin-left:1em;">'+answer+'</div>';
 		$('#ssb').after(answer_html);
-		$('#answer_content').html(answer);
+		$('#ai').html(answer);
 	},
 });
 
-function submit_answer() {
-	answer = $('#answer_content').val();
-  query = query.replace(/\+/g, ' ');
-  data = 'q='+query+'&a='+answer;
-	GM_xmlhttpRequest({
-		method: 'POST',
-    url: 'http://quiqi.org/post.php',
-		headers: {
-			'Content-type' : 'application/x-www-form-urlencoded',
-			'User-agent' : 'Mozilla/4.0 (compatible) Greasemonkey',
-		},
-		data:data,
-		onload: function(responseDetails) {
+function save() {
+  var q = $('input[name="q"]').val();
+  var a = $('#ai').val();
+  $.post('http://quiqi.org/post.php',
+    {q:q, a:a}, function (data) {
+      alert(data);
       $('#google_answers_form').hide();
-			response = responseDetails.responseText;
-      if(response == "please login first") {
-        fromsave = true;
+      if(data == "please login first") {
+        $('#msg').html('please login first');
         $('#login').slideDown();
-      } else {
-        response = response.replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/%2B/g, '\+').replace(/%2C/g, '\,');
-        response = response.replace(/</g,'&lt;');
-        response = response.replace(/>/g,'&gt;');
-        response = response.replace(/\n/g,'<br>');
-        $('#answer').html(answer.replace(/\n/g, '<br>'));
-        $('#answer').show();
       }
-		},
-	});
+    }
+  );
+  $('#answer').html(safe(a)).show();
+  fromsave = true;
 }
+
 
 toggle_add_answer = function() {
   $('#google_answers_form').toggle();
   $('#answer').toggle();
-  $('#answer_content').val(
-    $('#answer').html()
-                .replace(/<br>/g, '\n')
-                .replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>')
-   );
+  $('#ai').val(
+    unsafe($('#answer').html())
+  );
 }
 
 function login() {
@@ -101,7 +88,7 @@ function login() {
       $('#msg').html('logged in');
       setTimeout("$('#msg').fadeOut()", 3000);
       if(fromsave) {
-        submit_answer();
+        save();
         fromsave = false;
       }
     } else {
@@ -116,7 +103,7 @@ function register() {
       $('#msg').html('registered');
       setTimeout("$('#msg').fadeOut()", 3000);
       if(fromsave) {
-        submit_answer();
+        save();
         fromsave = false;
       }
     } else {
@@ -134,9 +121,8 @@ function cancel_login() {
 function nop() {}
 
 $(document).ready( function() {
-	// your jquery code here
- 	form = '<form action="javascript:submit_answer()" method="post" id="google_answers_form">' +
- 						'<input type="text" name="content" size="60" id="answer_content"/>' + 	
+ 	form = '<form action="javascript:save()" method="post" id="google_answers_form">' +
+ 						'<input type="text" name="content" size="60" id="ai"/>' + 	
 						'<a id="add"><b>add</b></a>' + 
  					'</form>' +
           '<div id="msg"></div>' +
@@ -148,7 +134,7 @@ $(document).ready( function() {
             '<a href="javascript:nop()" id="aregister">register</a>' +
           '</div>';
 	$('#ssb').after(form);
-  $('#add').click(submit_answer);
+  $('#add').click(save);
   $('#acancel_login').click(cancel_login);
   $('#alogin').click(login);
   $('#aregister').click(register);
