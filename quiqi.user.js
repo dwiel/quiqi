@@ -11,14 +11,15 @@
 var url = document.location.href;
 var begin = url.indexOf('q=');
 var end = url.indexOf('&', begin);
-var query;
 var fromsave = false;
-if(end == -1) {
-	query = url.substring(begin+2);
-} else {
-	query = url.substring(begin+2, end);
-}
-query = query.replace(/%22/g, "%5C%22").replace(/%27/g, "%5C%27");
+// var query;
+// if(end == -1) {
+// 	query = url.substring(begin+2);
+// } else {
+// 	query = url.substring(begin+2, end);
+// }
+// query = query.replace(/%22/g, "%5C%22").replace(/%27/g, "%5C%27");
+query = $('input[name="q"]').val();
 
 $.post = function(url, options, fn) {
   GM_xmlhttpRequest({
@@ -60,7 +61,6 @@ function save() {
   var a = $('#ai').val();
   $.post('http://quiqi.org/post.php',
     {q:q, a:a}, function (data) {
-      alert(data);
       $('#google_answers_form').hide();
       if(data == "please login first") {
         $('#msg').html('please login first');
