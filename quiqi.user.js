@@ -12,14 +12,14 @@ var url = document.location.href;
 var begin = url.indexOf('q=');
 var end = url.indexOf('&', begin);
 var fromsave = false;
+var query = '';
 // var query;
 // if(end == -1) {
-// 	query = url.substring(begin+2);
+//  query = url.substring(begin+2);
 // } else {
-// 	query = url.substring(begin+2, end);
+//  query = url.substring(begin+2, end);
 // }
 // query = query.replace(/%22/g, "%5C%22").replace(/%27/g, "%5C%27");
-query = $('input[name="q"]').val();
 
 $.post = function(url, options, fn) {
   GM_xmlhttpRequest({
@@ -35,26 +35,13 @@ $.post = function(url, options, fn) {
     }
   });
 }
+
 function safe(s) {
   return s.replace(/</g,'&#60;').replace(/>/g,'&#62;').replace(/\n/g,'<br>');
 }
 function unsafe(s) {
     return s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/<br>/g, '\n');
 }
-
-GM_xmlhttpRequest({
-	method: 'GET',
-  url: 'http://quiqi.org/q/'+query,
-	headers: {
-		'User-agent': 'Mozilla/4.0 (compatible) Greasemonkey',
-	},
-	onload: function(responseDetails) {
-		answer = safe(responseDetails.responseText);
-		answer_html = '<div id="answer" style="margin-left:1em;">'+answer+'</div>';
-		$('#ssb').after(answer_html);
-		$('#ai').html(answer);
-	},
-});
 
 function save() {
   var q = $('input[name="q"]').val();
@@ -120,11 +107,28 @@ function cancel_login() {
 
 function nop() {}
 
-$(document).ready( function() {
- 	form = '<form action="javascript:save()" method="post" id="google_answers_form">' +
- 						'<input type="text" name="content" size="60" id="ai"/>' + 	
-						'<a id="add"><b>add</b></a>' + 
- 					'</form>' +
+$(function() {
+  query = $('input[name="q"]').val();
+  alert(query);
+  
+  GM_xmlhttpRequest({
+    method: 'GET',
+    url: 'http://quiqi.org/q/'+query,
+    headers: {
+      'User-agent': 'Mozilla/4.0 (compatible) Greasemonkey',
+    },
+    onload: function(responseDetails) {
+      answer = safe(responseDetails.responseText);
+      answer_html = '<div id="answer" style="margin-left:1em;">'+answer+'</div>';
+      $('#ssb').after(answer_html);
+      $('#ai').html(answer);
+    },
+  });
+
+  form = '<form action="javascript:save()" method="post" id="google_answers_form">' +
+            '<input type="text" name="content" size="60" id="ai"/>' +   
+            '<a id="add"><b>add</b></a>' + 
+          '</form>' +
           '<div id="msg"></div>' +
           '<div id="login">' +
             'username: <input type="text" name="username" id="username"/><br/>' +
@@ -133,14 +137,14 @@ $(document).ready( function() {
             '<a href="javascript:nop()" id="acancel_login">cancel</a> ' +
             '<a href="javascript:nop()" id="aregister">register</a>' +
           '</div>';
-	$('#ssb').after(form);
+  $('#ssb').after(form);
   $('#add').click(save);
   $('#acancel_login').click(cancel_login);
   $('#alogin').click(login);
   $('#aregister').click(register);
-	$('#google_answers_form').hide();
+  $('#google_answers_form').hide();
   $('#login').hide();
-	
-	$('#prs').after('<div id="ans" style="color:#DDD"><b>answer</b></div>');
-	$('#ans').click(toggle_add_answer);
+  
+  $('#prs').after('<div id="ans" style="color:#DDD"><b>answer</b></div>');
+  $('#ans').click(toggle_add_answer);
 });
