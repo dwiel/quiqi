@@ -109,7 +109,6 @@ function nop() {}
 
 $(function() {
   query = $('input[name="q"]').val();
-  alert(query);
   
   GM_xmlhttpRequest({
     method: 'GET',
